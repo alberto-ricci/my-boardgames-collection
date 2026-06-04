@@ -2,13 +2,13 @@ import React from "react";
 import { Users, Clock, Calendar } from "lucide-react";
 
 const formatPlayerCount = (min, max) => {
-	if (!min && !max) return "—";
-	if (min === max) return `${min} players`;
+	if (min == null && max == null) return "—";
+	if (min === max) return `${min} ${min === 1 ? "player" : "players"}`;
 	return `${min}-${max} players`;
 };
 
 const formatPlaytime = (min, max) => {
-	if (!min && !max) return "—";
+	if (min == null && max == null) return "—";
 	if (min === max) return `${min} min`;
 	return `${min}-${max} min`;
 };

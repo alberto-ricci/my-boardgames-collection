@@ -250,5 +250,65 @@
 		"year_published": 1971,
 		"categories": ["Cards", "Family", "Classic"],
 		"description": "A classic turn-based card game where players aim to be the first to get rid of all their cards by matching colours or numbers and using action cards."
+	},
+	{
+		"id": "flip-7",
+		"name": "Flip 7",
+		"type": "Card Game",
+		"min_players": 3,
+		"max_players": 18,
+		"min_playtime": 10,
+		"max_playtime": 20,
+		"year_published": 2024,
+		"categories": ["Cards", "Family", "Press Your Luck"],
+		"description": "A press-your-luck card game where players keep drawing numbered cards to score points, but drawing a duplicate busts you. First to 200 wins."
+	},
+	{
+		"id": "flip7-with-a-vengeance",
+		"name": "Flip 7: With a Vengeance",
+		"type": "Card Game",
+		"min_players": 3,
+		"max_players": 28,
+		"min_playtime": 10,
+		"max_playtime": 20,
+		"year_published": 2026,
+		"categories": ["Cards", "Family", "Press Your Luck"],
+		"description": "A meaner standalone sequel to Flip 7 — same press-your-luck card flipping, now with take-that action cards that let you steal, slash scores, and force opponents to draw."
+	},
+	{
+		"id": "pixies",
+		"name": "Pixies",
+		"type": "Card Game",
+		"min_players": 2,
+		"max_players": 5,
+		"min_playtime": 20,
+		"max_playtime": 30,
+		"year_published": 2024,
+		"categories": ["Drafting", "Family", "Puzzle"],
+		"description": "A card drafting game where players build a 3×3 grid over three rounds, scoring points for stacked cards, colour zones and spirals — easy to learn but deceptively tactical."
+	},
+	{
+		"id": "red-north",
+		"name": "Red North",
+		"type": "Card Game",
+		"min_players": 2,
+		"max_players": 4,
+		"min_playtime": 20,
+		"max_playtime": 30,
+		"year_published": 2025,
+		"categories": ["Bluff", "Deduction", "Strategy"],
+		"description": "A Viking-themed hidden information game where players secretly deploy raiding parties over three rounds to conquer outposts, knowing when to commit and when to hold back is everything."
+	},
+	{
+		"id": "dungeon-foury",
+		"name": "Dungeon Foury",
+		"type": "Board Game",
+		"min_players": 1,
+		"max_players": 1,
+		"min_playtime": 15,
+		"max_playtime": 60,
+		"year_published": 2024,
+		"categories": ["Solo", "Dungeon Crawler", "Roll and Write"],
+		"description": "A solo roll-and-write dungeon crawler played on a book. Roll dice to map out rooms, fight monsters and manage resources across four missions, all to awaken the Oracle at the heart of the dungeon."
 	}
 ]

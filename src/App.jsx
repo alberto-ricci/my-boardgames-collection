@@ -2,7 +2,6 @@ import { useState } from "react";
 import Header from "./components/Header";
 import NavTabs from "./components/NavTabs";
 import BoardGameGrid from "./components/BoardGameGrid";
-import EmptyState from "./components/EmptyState";
 import gamesData from "./data/games.json";
 
 function App() {

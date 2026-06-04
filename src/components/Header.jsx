@@ -1,3 +1,5 @@
+import React from "react";
+
 const Header = () => (
 	<header className="bg-white shadow-sm border-b">
 		<div className="max-w-6xl mx-auto px-4 py-6">

@@ -1,15 +1,26 @@
 import React from "react";
 
-const GameImage = ({ name, id, image_url }) => {
-	// Local hardcoded images fallback
-	const placeholder = "/images/fallback.jpg"; // put in /public/images/
+const IMAGE_FORMATS = ["jpg", "jpeg", "png", "webp"];
 
-	// Try to load `/images/<id>.jpg`
-	const localPath = `/images/${id}.jpg`;
-	const [src, setSrc] = React.useState(image_url || localPath);
+const GameImage = ({ name, id }) => {
+	const placeholder = "/images/fallback.jpg";
+
+	const [formatIndex, setFormatIndex] = React.useState(0);
+	const [src, setSrc] = React.useState(`/images/${id}.${IMAGE_FORMATS[0]}`);
+
+	React.useEffect(() => {
+		setFormatIndex(0);
+		setSrc(`/images/${id}.${IMAGE_FORMATS[0]}`);
+	}, [id]);
 
 	const handleError = () => {
-		if (src !== placeholder) setSrc(placeholder);
+		const next = formatIndex + 1;
+		if (next < IMAGE_FORMATS.length) {
+			setFormatIndex(next);
+			setSrc(`/images/${id}.${IMAGE_FORMATS[next]}`);
+		} else {
+			setSrc(placeholder);
+		}
 	};
 
 	return (

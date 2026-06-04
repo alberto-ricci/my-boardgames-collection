@@ -3,21 +3,17 @@ import GameImage from "./GameImage";
 import GameInfo from "./GameInfo";
 import CategoryTags from "./CategoryTags";
 
-/**
- * BoardGameCard - displays a single board game card with image, details and categories.
- */
 const BoardGameCard = ({ game }) => {
 	if (!game) return null;
 
 	return (
 		<article
 			className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 flex flex-col h-full"
-			aria-label={game.name}
+			aria-label={`${game.name} board game card`}
 		>
 			<GameImage
 				name={game.name}
 				id={game.id}
-				image_url={game.image_url}
 			/>
 
 			<div className="p-4 flex flex-col flex-grow justify-between">
@@ -33,6 +29,12 @@ const BoardGameCard = ({ game }) => {
 						max_playtime={game.max_playtime}
 						year_published={game.year_published}
 					/>
+
+					{game.description && (
+						<p className="text-sm text-gray-500 mt-2 line-clamp-3">
+							{game.description}
+						</p>
+					)}
 				</div>
 
 				{game.categories?.length > 0 && (
