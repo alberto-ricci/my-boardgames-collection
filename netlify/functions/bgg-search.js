@@ -3,10 +3,18 @@ const { parseStringPromise } = require("xml2js");
 
 const fetch = (url) =>
 	new Promise((resolve, reject) => {
-		https.get(url, (res) => {
+		const options = {
+			headers: {
+				"User-Agent": "BoardGameCollectionApp/1.0",
+				Accept: "application/xml",
+			},
+		};
+		https.get(url, options, (res) => {
 			let data = "";
 			res.on("data", (chunk) => (data += chunk));
-			res.on("end", () => resolve(data));
+			res.on("end", () =>
+				resolve({ status: res.statusCode, body: data }),
+			);
 			res.on("error", reject);
 		});
 	});
@@ -23,10 +31,23 @@ exports.handler = async (event) => {
 
 	try {
 		// Step 1 — search by name
-		const searchXml = await fetch(
+		const searchRes = await fetch(
 			`https://boardgamegeek.com/xmlapi2/search?query=${encodeURIComponent(name)}&type=boardgame`,
 		);
-		const searchResult = await parseStringPromise(searchXml);
+
+		console.log("Search status:", searchRes.status);
+		console.log("Search preview:", searchRes.body.slice(0, 300));
+
+		if (searchRes.status !== 200) {
+			return {
+				statusCode: 502,
+				body: JSON.stringify({
+					error: `BGG returned status ${searchRes.status}`,
+				}),
+			};
+		}
+
+		const searchResult = await parseStringPromise(searchRes.body);
 		const items = searchResult?.items?.item ?? [];
 
 		if (items.length === 0) {
@@ -42,11 +63,24 @@ exports.handler = async (event) => {
 			.map((item) => item.$.id)
 			.join(",");
 
-		// Step 2 — fetch details for those ids
-		const detailXml = await fetch(
+		// Step 2 — fetch details
+		const detailRes = await fetch(
 			`https://boardgamegeek.com/xmlapi2/thing?id=${topIds}&stats=1`,
 		);
-		const detailResult = await parseStringPromise(detailXml);
+
+		console.log("Detail status:", detailRes.status);
+		console.log("Detail preview:", detailRes.body.slice(0, 300));
+
+		if (detailRes.status !== 200) {
+			return {
+				statusCode: 502,
+				body: JSON.stringify({
+					error: `BGG detail returned status ${detailRes.status}`,
+				}),
+			};
+		}
+
+		const detailResult = await parseStringPromise(detailRes.body);
 		const games = detailResult?.items?.item ?? [];
 
 		const parsed = games.map((game) => {
@@ -95,6 +129,7 @@ exports.handler = async (event) => {
 			body: JSON.stringify(parsed),
 		};
 	} catch (err) {
+		console.error("Function error:", err.message);
 		return {
 			statusCode: 500,
 			body: JSON.stringify({ error: err.message }),
