@@ -1,21 +1,21 @@
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
-import BoardGameCard from "./BoardGameCard/BoardGameCard";
-import { useLanguage } from "../i18n";
+import WishlistCard from "../WishlistCard/WishlistCard";
+import { useLanguage } from "../../i18n/index.jsx";
 
-const BoardGameGrid = ({ games = [], onRemove, onSelect }) => {
+const WishlistGrid = ({ games = [], onRemove, onMove }) => {
 	const { t } = useLanguage();
 	const validGames = games.filter((game) => game?.id && game?.name);
 
 	if (validGames.length === 0) {
 		return (
 			<div className="flex flex-col items-center justify-center py-16 text-gray-400 dark:text-gray-500">
-				<div className="text-6xl mb-4">🎲</div>
+				<div className="text-6xl mb-4">🎯</div>
 				<h3 className="text-lg font-semibold text-gray-600 dark:text-gray-400 mb-1">
-					{t("empty.collection.title")}
+					{t("empty.wishlist.title")}
 				</h3>
-				<p className="text-sm">{t("empty.collection.body")}</p>
+				<p className="text-sm">{t("empty.wishlist.body")}</p>
 			</div>
 		);
 	}
@@ -33,9 +33,9 @@ const BoardGameGrid = ({ games = [], onRemove, onSelect }) => {
 						transition={{ duration: 0.2, ease: "easeOut" }}
 						className="relative"
 					>
-						<BoardGameCard
+						<WishlistCard
 							game={game}
-							onClick={() => onSelect?.(game)}
+							onMove={onMove}
 						/>
 						{onRemove && (
 							<button
@@ -44,7 +44,7 @@ const BoardGameGrid = ({ games = [], onRemove, onSelect }) => {
 									onRemove(game.id);
 								}}
 								className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white rounded-md p-1.5 transition-colors duration-200"
-								aria-label={`Remove ${game.name} from collection`}
+								aria-label={`Remove ${game.name} from wishlist`}
 							>
 								<X className="w-3.5 h-3.5" />
 							</button>
@@ -56,4 +56,4 @@ const BoardGameGrid = ({ games = [], onRemove, onSelect }) => {
 	);
 };
 
-export default BoardGameGrid;
+export default WishlistGrid;

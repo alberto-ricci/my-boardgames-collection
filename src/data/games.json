@@ -97,7 +97,7 @@
 	},
 	{
 		"id": "bang",
-		"name": "Bang!",
+		"name": "Bang! - La Pallottola",
 		"type": "Card Game",
 		"min_players": 4,
 		"max_players": 7,
@@ -121,7 +121,7 @@
 	},
 	{
 		"id": "exploding-kittens",
-		"name": "Exploding Kittens",
+		"name": "Exploding Kittens - NSFW Edition",
 		"type": "Card Game",
 		"min_players": 2,
 		"max_players": 5,
