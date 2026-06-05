@@ -4,7 +4,7 @@ import { X, Users, Clock, Calendar, Layers, Pencil } from "lucide-react";
 import GameImage from "../BoardGameCard/GameImage";
 import { useLanguage } from "../../i18n";
 import ExpansionsSection from "../AddGameModal/ExpansionsSection";
-import { useExpansions } from "../../hooks/useExpansions";
+import { useExpansions } from "/src/hooks/useExpansions.js";
 const GameModal = ({ game, onClose, onEdit, userId }) => {
 	const { t } = useLanguage();
 	const {
