@@ -1,138 +1,103 @@
-const https = require("https");
-const { parseStringPromise } = require("xml2js");
+import React from "react";
+import { Search, Loader2, AlertTriangle } from "lucide-react";
+import { useBggSearch } from "../../hooks/useBggSearch";
+import { useApiCounter } from "../../hooks/useApiCounter";
 
-const fetch = (url) =>
-	new Promise((resolve, reject) => {
-		const options = {
-			headers: {
-				"User-Agent": "BoardGameCollectionApp/1.0",
-				Accept: "application/xml",
-			},
-		};
-		https.get(url, options, (res) => {
-			let data = "";
-			res.on("data", (chunk) => (data += chunk));
-			res.on("end", () =>
-				resolve({ status: res.statusCode, body: data }),
-			);
-			res.on("error", reject);
-		});
-	});
+const BggSearch = ({ onSelect, inputClass }) => {
+	const { query, setQuery, results, loading, error } = useBggSearch();
+	const { isExhausted, isWarning, remaining } = useApiCounter();
 
-exports.handler = async (event) => {
-	const name = event.queryStringParameters?.name;
+	const exhausted = isExhausted();
+	const warning = isWarning();
+	const left = remaining();
 
-	if (!name) {
-		return {
-			statusCode: 400,
-			body: JSON.stringify({ error: "Missing name parameter" }),
-		};
-	}
+	return (
+		<div className="relative">
+			<label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+				Search BoardGameGeek
+			</label>
 
-	try {
-		// Step 1 — search by name
-		const searchRes = await fetch(
-			`https://boardgamegeek.com/xmlapi2/search?query=${encodeURIComponent(name)}&type=boardgame`,
-		);
+			{warning && !exhausted && (
+				<div className="flex items-center gap-2 text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg px-3 py-2 mb-2">
+					<AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+					Only {left} searches left this month.
+				</div>
+			)}
 
-		console.log("Search status:", searchRes.status);
-		console.log("Search preview:", searchRes.body.slice(0, 300));
+			{exhausted && (
+				<div className="flex items-center gap-2 text-xs text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg px-3 py-2 mb-2">
+					<AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+					Monthly search limit reached. Fill the form manually.
+				</div>
+			)}
 
-		if (searchRes.status !== 200) {
-			return {
-				statusCode: 502,
-				body: JSON.stringify({
-					error: `BGG returned status ${searchRes.status}`,
-				}),
-			};
-		}
+			<div className="relative">
+				<Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+				<input
+					type="text"
+					value={query}
+					onChange={(e) => setQuery(e.target.value)}
+					placeholder={
+						exhausted
+							? "Search unavailable"
+							: "Search and auto-fill..."
+					}
+					disabled={exhausted}
+					className={`${inputClass} pl-9 ${exhausted ? "opacity-50 cursor-not-allowed" : ""}`}
+				/>
+				{loading && (
+					<Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 animate-spin" />
+				)}
+			</div>
 
-		const searchResult = await parseStringPromise(searchRes.body);
-		const items = searchResult?.items?.item ?? [];
+			{results.length > 0 && (
+				<>
+					<div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg overflow-hidden">
+						{results.map((game) => (
+							<button
+								key={game.bgg_id}
+								type="button"
+								onClick={() => {
+									onSelect(game);
+									setQuery("");
+								}}
+								className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-150 text-left"
+							>
+								{game.thumbnail ? (
+									<img
+										src={game.thumbnail}
+										alt={game.name}
+										className="w-10 h-10 rounded object-cover shrink-0"
+									/>
+								) : (
+									<div className="w-10 h-10 rounded bg-gray-100 dark:bg-gray-700 shrink-0 flex items-center justify-center text-lg">
+										🎲
+									</div>
+								)}
+								<div className="min-w-0">
+									<p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+										{game.name}
+									</p>
+									{game.year_published && (
+										<p className="text-xs text-gray-500 dark:text-gray.400">
+											{game.year_published}
+										</p>
+									)}
+								</div>
+							</button>
+						))}
+					</div>
+					<p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+						Select a result to auto-fill the form
+					</p>
+				</>
+			)}
 
-		if (items.length === 0) {
-			return {
-				statusCode: 200,
-				body: JSON.stringify([]),
-			};
-		}
-
-		// Take top 5 results
-		const topIds = items
-			.slice(0, 5)
-			.map((item) => item.$.id)
-			.join(",");
-
-		// Step 2 — fetch details
-		const detailRes = await fetch(
-			`https://boardgamegeek.com/xmlapi2/thing?id=${topIds}&stats=1`,
-		);
-
-		console.log("Detail status:", detailRes.status);
-		console.log("Detail preview:", detailRes.body.slice(0, 300));
-
-		if (detailRes.status !== 200) {
-			return {
-				statusCode: 502,
-				body: JSON.stringify({
-					error: `BGG detail returned status ${detailRes.status}`,
-				}),
-			};
-		}
-
-		const detailResult = await parseStringPromise(detailRes.body);
-		const games = detailResult?.items?.item ?? [];
-
-		const parsed = games.map((game) => {
-			const name =
-				game.name?.find((n) => n.$?.type === "primary")?.$?.value ??
-				game.name?.[0]?.$?.value ??
-				"Unknown";
-
-			const categories = (game.link ?? [])
-				.filter((l) => l.$?.type === "boardgamecategory")
-				.map((l) => l.$?.value)
-				.filter(Boolean);
-
-			const mechanics = (game.link ?? [])
-				.filter((l) => l.$?.type === "boardgamemechanic")
-				.map((l) => l.$?.value)
-				.filter(Boolean);
-
-			return {
-				bgg_id: game.$.id,
-				name,
-				year_published:
-					parseInt(game.yearpublished?.[0]?.$?.value) || null,
-				min_players: parseInt(game.minplayers?.[0]?.$?.value) || null,
-				max_players: parseInt(game.maxplayers?.[0]?.$?.value) || null,
-				min_playtime: parseInt(game.minplaytime?.[0]?.$?.value) || null,
-				max_playtime: parseInt(game.maxplaytime?.[0]?.$?.value) || null,
-				description:
-					game.description?.[0]
-						?.replace(/&#10;/g, " ")
-						?.replace(/&amp;/g, "&")
-						?.replace(/<[^>]+>/g, "")
-						?.trim()
-						?.slice(0, 500) ?? null,
-				thumbnail: game.thumbnail?.[0] ?? null,
-				categories: [...new Set([...categories, ...mechanics])].slice(
-					0,
-					6,
-				),
-			};
-		});
-
-		return {
-			statusCode: 200,
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify(parsed),
-		};
-	} catch (err) {
-		console.error("Function error:", err.message);
-		return {
-			statusCode: 500,
-			body: JSON.stringify({ error: err.message }),
-		};
-	}
+			{error && !warning && (
+				<p className="text-xs text-red-500 mt-1">{error}</p>
+			)}
+		</div>
+	);
 };
+
+export default BggSearch;
