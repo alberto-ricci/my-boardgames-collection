@@ -32,22 +32,27 @@ exports.handler = async (event) => {
 	}
 
 	try {
-		const res = await fetch(
-			`https://meepleit.p.rapidapi.com/meepleit-search?search=${encodeURIComponent(name)}&limit=5`,
-			{
-				headers: {
-					"x-rapidapi-key": apiKey,
-					"x-rapidapi-host": "meepleit.p.rapidapi.com",
-					"Content-Type": "application/json",
-				},
+		const url = `https://meepleit.p.rapidapi.com/meepleit-search?search=${encodeURIComponent(name)}&limit=5`;
+		console.log("Calling URL:", url);
+		console.log("API Key present:", !!apiKey);
+
+		const res = await fetch(url, {
+			headers: {
+				"x-rapidapi-key": apiKey,
+				"x-rapidapi-host": "meepleit.p.rapidapi.com",
+				"Content-Type": "application/json",
 			},
-		);
+		});
+
+		console.log("Response status:", res.status);
+		console.log("Response body:", res.body.slice(0, 500));
 
 		if (res.status !== 200) {
 			return {
 				statusCode: 502,
 				body: JSON.stringify({
 					error: `API returned status ${res.status}`,
+					body: res.body.slice(0, 200),
 				}),
 			};
 		}
