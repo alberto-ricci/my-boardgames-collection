@@ -33,17 +33,15 @@ exports.handler = async (event) => {
 
 	try {
 		const res = await fetch(
-			`https://meepleit.p.rapidapi.com/games/search?query=${encodeURIComponent(name)}`,
+			`https://meepleit.p.rapidapi.com/meepleit-search?search=${encodeURIComponent(name)}&limit=5`,
 			{
 				headers: {
 					"x-rapidapi-key": apiKey,
 					"x-rapidapi-host": "meepleit.p.rapidapi.com",
+					"Content-Type": "application/json",
 				},
 			},
 		);
-
-		console.log("MeepleIt status:", res.status);
-		console.log("MeepleIt preview:", res.body.slice(0, 300));
 
 		if (res.status !== 200) {
 			return {
@@ -55,23 +53,21 @@ exports.handler = async (event) => {
 		}
 
 		const data = JSON.parse(res.body);
-		const games = Array.isArray(data)
-			? data
-			: (data.games ?? data.results ?? []);
+		const games = data.games ?? [];
 
 		const parsed = games.slice(0, 5).map((game) => ({
-			bgg_id: game.id ?? game.bgg_id ?? null,
-			name: game.name ?? game.title ?? "Unknown",
-			year_published: game.year_published ?? game.year ?? null,
-			min_players: game.min_players ?? null,
-			max_players: game.max_players ?? null,
-			min_playtime: game.min_playtime ?? null,
-			max_playtime: game.max_playtime ?? null,
-			description: game.description?.slice(0, 500) ?? null,
-			thumbnail: game.thumbnail ?? game.image ?? null,
+			bgg_id: game.id,
+			name: game.rawName,
+			year_published: game.yearPublished ?? null,
+			min_players: game.minPlayers ?? null,
+			max_players: game.maxPlayers ?? null,
+			min_playtime: game.minPlayTime ?? null,
+			max_playtime: game.maxPlayTime ?? null,
+			description: null,
+			thumbnail: null,
 			categories: [
-				...(game.categories?.map((c) => c.name ?? c) ?? []),
-				...(game.mechanics?.map((m) => m.name ?? m) ?? []),
+				...(game.categories ?? []),
+				...(game.mechanics ?? []),
 			].slice(0, 6),
 		}));
 
