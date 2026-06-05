@@ -5,6 +5,7 @@ const TABS = [
 	{ id: "collection", labelKey: "nav.collection" },
 	{ id: "wishlist", labelKey: "nav.wishlist" },
 	{ id: "stats", labelKey: "nav.stats" },
+	{ id: "suggest", labelKey: "nav.suggest" },
 ];
 
 const NavTabs = ({ activeTab, setActiveTab }) => {

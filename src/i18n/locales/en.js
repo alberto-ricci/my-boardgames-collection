@@ -150,4 +150,6 @@ export default {
 	"expansions.remove": "Remove",
 	"expansions.expansion": "expansion",
 	"expansions.expansions": "expansions",
+
+	"nav.suggest": "Suggest",
 };

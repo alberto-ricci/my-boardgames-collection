@@ -13,6 +13,7 @@ import LoginPage from "./components/LoginPage/LoginPage";
 import SharedView from "./components/SharedView/SharedView";
 import ProfilePage from "./components/ProfilePage/ProfilePage";
 import StatsTab from "./components/StatsTab/StatsTab";
+import SuggestTab from "./components/SuggestTab";
 import ToastContainer from "./components/Toast/ToastContainer";
 import ScrollToTop from "./components/ScrollToTop/ScrollToTop";
 import { useAuth } from "./hooks/useAuth";
@@ -156,7 +157,10 @@ function CollectionApp() {
 		[collection],
 	);
 
-	const addModalMode = activeTab === "stats" ? "collection" : activeTab;
+	const addModalMode =
+		activeTab === "stats" || activeTab === "suggest"
+			? "collection"
+			: activeTab;
 	const addModalSubmit =
 		activeTab === "wishlist" ? addToWishlist : addToCollection;
 
@@ -215,6 +219,12 @@ function CollectionApp() {
 					/>
 				)}
 				{activeTab === "stats" && <StatsTab collection={collection} />}
+				{activeTab === "suggest" && (
+					<SuggestTab
+						collection={collection}
+						wishlist={wishlist}
+					/>
+				)}
 			</main>
 
 			<AddGameButton onClick={handleOpenAdd} />
