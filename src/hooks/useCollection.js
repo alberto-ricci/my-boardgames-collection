@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "../lib/supabase";
 
 export const useCollection = (userId) => {
@@ -6,50 +6,71 @@ export const useCollection = (userId) => {
 	const [filteredGames, setFilteredGames] = useState([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState(null);
-	const addGame = (game) => {
-		setCollection((prev) => [...prev, game]);
-	};
-	const updateGame = (updatedGame) => {
-		setCollection((prev) =>
-			prev.map((g) => (g.id === updatedGame.id ? updatedGame : g)),
-		);
-	};
 
-	useEffect(() => {
+	const fetchCollection = useCallback(async () => {
 		if (!userId) {
 			setLoading(false);
 			return;
 		}
 
-		const fetchCollection = async () => {
-			setLoading(true);
-			setError(null);
+		setLoading(true);
+		setError(null);
 
-			const { data, error } = await supabase.from("games").select("*");
+		const { data, error } = await supabase
+			.from("games")
+			.select("*, expansions(count)")
+			.eq("user_id", userId)
+			.order("name", { ascending: true });
 
-			if (error) {
-				setError("Failed to load collection.");
-			} else {
-				setCollection(data);
-				setFilteredGames(data);
-			}
+		if (error) {
+			setError("Failed to load collection.");
+		} else {
+			const gamesWithCount = data.map((g) => ({
+				...g,
+				expansion_count: g.expansions?.[0]?.count ?? 0,
+			}));
+			setCollection(gamesWithCount);
+			setFilteredGames(gamesWithCount);
+		}
 
-			setLoading(false);
-		};
-
-		fetchCollection();
+		setLoading(false);
 	}, [userId]);
 
-	const removeFromCollection = async (gameId) => {
-		const { error } = await supabase
-			.from("games")
-			.delete()
-			.eq("id", gameId)
-			.eq("user_id", userId);
-		if (!error) {
-			setCollection((prev) => prev.filter((game) => game.id !== gameId));
-		}
-	};
+	useEffect(() => {
+		fetchCollection();
+	}, [fetchCollection]);
+
+	const addGame = useCallback((game) => {
+		setCollection((prev) => {
+			const updated = [...prev, { ...game, expansion_count: 0 }];
+			return updated.sort((a, b) => a.name.localeCompare(b.name));
+		});
+	}, []);
+
+	const updateGame = useCallback((updatedGame) => {
+		setCollection((prev) =>
+			prev.map((g) =>
+				g.id === updatedGame.id
+					? { ...updatedGame, expansion_count: g.expansion_count }
+					: g,
+			),
+		);
+	}, []);
+
+	const removeFromCollection = useCallback(
+		async (gameId) => {
+			const { error } = await supabase
+				.from("games")
+				.delete()
+				.eq("id", gameId)
+				.eq("user_id", userId);
+
+			if (!error) {
+				setCollection((prev) => prev.filter((g) => g.id !== gameId));
+			}
+		},
+		[userId],
+	);
 
 	return {
 		collection,
@@ -60,5 +81,6 @@ export const useCollection = (userId) => {
 		removeFromCollection,
 		addGame,
 		updateGame,
+		refetch: fetchCollection,
 	};
 };

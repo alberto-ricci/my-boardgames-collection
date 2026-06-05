@@ -1,53 +1,56 @@
+import { useCallback } from "react";
+
 const STORAGE_KEY = "meepleit_usage";
 const MONTHLY_LIMIT = 200;
 const WARNING_THRESHOLD = 10;
 
-const getStoredUsage = () => {
+const getCurrentMonth = () => {
+	const now = new Date();
+	return `${now.getFullYear()}-${now.getMonth() + 1}`;
+};
+
+const getUsage = () => {
 	try {
 		const stored = localStorage.getItem(STORAGE_KEY);
-		if (!stored) return { count: 0, month: getCurrentMonth() };
-		return JSON.parse(stored);
+		const parsed = stored ? JSON.parse(stored) : null;
+		const currentMonth = getCurrentMonth();
+
+		if (!parsed || parsed.month !== currentMonth) {
+			const fresh = { count: 0, month: currentMonth };
+			localStorage.setItem(STORAGE_KEY, JSON.stringify(fresh));
+			return fresh;
+		}
+
+		return parsed;
 	} catch {
 		return { count: 0, month: getCurrentMonth() };
 	}
 };
 
-const getCurrentMonth = () => {
-	const now = new Date();
-	return `${now.getFullYear()}-${now.getMonth()}`;
-};
-
 const saveUsage = (data) => {
-	localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+	try {
+		localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+	} catch {
+		console.warn("Could not save API usage to localStorage.");
+	}
 };
 
 export const useApiCounter = () => {
-	const getUsage = () => {
-		const stored = getStoredUsage();
-		// Reset if new month
-		if (stored.month !== getCurrentMonth()) {
-			const fresh = { count: 0, month: getCurrentMonth() };
-			saveUsage(fresh);
-			return fresh;
-		}
-		return stored;
-	};
-
-	const increment = () => {
+	const increment = useCallback(() => {
 		const usage = getUsage();
-		const updated = { ...usage, count: usage.count + 1 };
-		saveUsage(updated);
-		return updated;
-	};
+		saveUsage({ ...usage, count: usage.count + 1 });
+	}, []);
 
-	const remaining = () => {
-		const usage = getUsage();
-		return MONTHLY_LIMIT - usage.count;
-	};
+	const remaining = useCallback(() => {
+		return MONTHLY_LIMIT - getUsage().count;
+	}, []);
 
-	const isExhausted = () => remaining() <= 0;
+	const isExhausted = useCallback(() => remaining() <= 0, [remaining]);
 
-	const isWarning = () => remaining() <= WARNING_THRESHOLD;
+	const isWarning = useCallback(
+		() => remaining() <= WARNING_THRESHOLD,
+		[remaining],
+	);
 
 	return { increment, remaining, isExhausted, isWarning };
 };

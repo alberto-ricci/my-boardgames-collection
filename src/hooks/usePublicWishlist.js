@@ -7,21 +7,39 @@ export const usePublicWishlist = (userId) => {
 	const [error, setError] = useState(null);
 
 	useEffect(() => {
-		if (!userId) return;
+		if (!userId) {
+			setLoading(false);
+			return;
+		}
 
-		const fetch = async () => {
+		let mounted = true;
+
+		const fetchPublicWishlist = async () => {
 			setLoading(true);
+			setError(null);
+
 			const { data, error } = await supabase
 				.from("wishlist")
 				.select("*")
-				.eq("user_id", userId);
+				.eq("user_id", userId)
+				.order("name", { ascending: true });
 
-			if (error) setError("Failed to load wishlist.");
-			else setWishlist(data);
+			if (!mounted) return;
+
+			if (error) {
+				setError("Failed to load wishlist.");
+			} else {
+				setWishlist(data ?? []);
+			}
+
 			setLoading(false);
 		};
 
-		fetch();
+		fetchPublicWishlist();
+
+		return () => {
+			mounted = false;
+		};
 	}, [userId]);
 
 	return { wishlist, loading, error };

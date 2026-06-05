@@ -1,6 +1,6 @@
-import React from "react";
+import React, { useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X } from "lucide-react";
+import { X, Loader2 } from "lucide-react";
 import { useLanguage } from "../../i18n";
 import BggSearch from "./BggSearch";
 import CategoryInput from "./CategoryInput";
@@ -29,6 +29,9 @@ const gameToForm = (game) => ({
 	categories: game.categories ?? [],
 });
 
+const INPUT_CLASS =
+	"w-full px-3 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-300 dark:focus:ring-blue-600 transition-colors duration-150";
+
 const AddGameModal = ({
 	mode,
 	game,
@@ -41,8 +44,9 @@ const AddGameModal = ({
 	const isCollection = mode === "collection";
 	const isEdit = mode === "edit";
 	const isMove = mode === "move";
+	const isWishlist = mode === "wishlist";
 	const showFullForm = isCollection || isEdit || isMove;
-	const showBggSearch = isCollection || isMove;
+	const showBggSearch = isCollection || isMove || isWishlist;
 
 	const [form, setForm] = React.useState(
 		(isEdit || isMove) && game ? gameToForm(game) : EMPTY_FORM,
@@ -58,27 +62,30 @@ const AddGameModal = ({
 		return () => document.removeEventListener("keydown", handleKeyDown);
 	}, [onClose]);
 
-	const updateField = (field, value) => {
+	const updateField = useCallback((field, value) => {
 		setForm((prev) => ({ ...prev, [field]: value }));
-	};
+	}, []);
 
-	const handleBggSelect = (bggGame) => {
-		if (mode === "wishlist") {
-			setForm({ ...EMPTY_FORM, name: bggGame.name ?? "" });
-		} else {
-			setForm({
-				name: bggGame.name ?? "",
-				type: "Board Game",
-				min_players: bggGame.min_players?.toString() ?? "",
-				max_players: bggGame.max_players?.toString() ?? "",
-				min_playtime: bggGame.min_playtime?.toString() ?? "",
-				max_playtime: bggGame.max_playtime?.toString() ?? "",
-				year_published: bggGame.year_published?.toString() ?? "",
-				description: bggGame.description ?? "",
-				categories: bggGame.categories ?? [],
-			});
-		}
-	};
+	const handleBggSelect = useCallback(
+		(bggGame) => {
+			if (isWishlist) {
+				setForm({ ...EMPTY_FORM, name: bggGame.name ?? "" });
+			} else {
+				setForm({
+					name: bggGame.name ?? "",
+					type: "Board Game",
+					min_players: bggGame.min_players?.toString() ?? "",
+					max_players: bggGame.max_players?.toString() ?? "",
+					min_playtime: bggGame.min_playtime?.toString() ?? "",
+					max_playtime: bggGame.max_playtime?.toString() ?? "",
+					year_published: bggGame.year_published?.toString() ?? "",
+					description: bggGame.description ?? "",
+					categories: bggGame.categories ?? [],
+				});
+			}
+		},
+		[isWishlist],
+	);
 
 	const handleSubmit = async (e) => {
 		e.preventDefault();
@@ -91,27 +98,27 @@ const AddGameModal = ({
 
 		setLoading(true);
 		const { error } = await onSubmit(form);
-		if (error) setError(error.message);
-		else onClose();
-		setLoading(false);
+		if (error) {
+			setError(error.message);
+			setLoading(false);
+		} else {
+			onClose();
+		}
 	};
 
-	const getTitle = () => {
-		if (isEdit) return t("edit.title");
-		if (isMove || isCollection) return t("add.collection.title");
-		return t("add.wishlist.title");
-	};
+	const title = isEdit
+		? t("edit.title")
+		: isWishlist
+			? t("add.wishlist.title")
+			: t("add.collection.title");
 
-	const getSubmitLabel = () => {
-		if (loading) return isEdit ? t("edit.submitting") : t("add.submitting");
-		if (isEdit) return t("edit.submit");
-		if (isMove) return t("wishlist.move");
-		if (isCollection) return t("add.submit.collection");
-		return t("add.submit.wishlist");
-	};
-
-	const inputClass =
-		"w-full px-3 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-300 dark:focus:ring-blue-600";
+	const submitLabel = isEdit
+		? t("edit.submit")
+		: isMove
+			? t("wishlist.move")
+			: isCollection
+				? t("add.submit.collection")
+				: t("add.submit.wishlist");
 
 	return (
 		<AnimatePresence>
@@ -124,26 +131,26 @@ const AddGameModal = ({
 			/>
 			<motion.div
 				className="fixed inset-0 z-50 flex items-center justify-center p-4"
-				initial={{ opacity: 0, scale: 0.97 }}
-				animate={{ opacity: 1, scale: 1 }}
-				exit={{ opacity: 0, scale: 0.97 }}
+				initial={{ opacity: 0, scale: 0.97, y: 8 }}
+				animate={{ opacity: 1, scale: 1, y: 0 }}
+				exit={{ opacity: 0, scale: 0.97, y: 8 }}
 				transition={{ duration: 0.2, ease: "easeOut" }}
 			>
 				<div
-					className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg w-full max-w-lg max-h-[90vh] overflow-y-auto"
+					className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl"
 					onClick={(e) => e.stopPropagation()}
 				>
 					{/* Header */}
-					<div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-700">
-						<h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-							{getTitle()}
+					<div className="sticky top-0 flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 z-10">
+						<h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">
+							{title}
 						</h2>
 						<button
 							onClick={onClose}
-							className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors duration-150"
+							className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors duration-150"
 							aria-label={t("modal.close")}
 						>
-							<X className="w-5 h-5" />
+							<X className="w-4 h-4" />
 						</button>
 					</div>
 
@@ -151,20 +158,17 @@ const AddGameModal = ({
 						onSubmit={handleSubmit}
 						className="px-6 py-5 space-y-4"
 					>
-						{/* BGG search */}
 						{showBggSearch && (
 							<BggSearch
 								onSelect={handleBggSelect}
-								inputClass={inputClass}
+								inputClass={INPUT_CLASS}
 							/>
 						)}
 
-						{/* Name */}
-						<div>
-							<label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-								{t("add.field.name")}{" "}
-								<span className="text-red-500">*</span>
-							</label>
+						<FormField
+							label={t("add.field.name")}
+							required
+						>
 							<input
 								type="text"
 								value={form.name}
@@ -172,17 +176,14 @@ const AddGameModal = ({
 									updateField("name", e.target.value)
 								}
 								placeholder={t("add.field.name.placeholder")}
-								className={inputClass}
+								className={INPUT_CLASS}
+								autoFocus={!showBggSearch}
 							/>
-						</div>
+						</FormField>
 
-						{/* Collection / edit / move fields */}
 						{showFullForm && (
 							<>
-								<div>
-									<label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-										{t("add.field.type")}
-									</label>
+								<FormField label={t("add.field.type")}>
 									<input
 										type="text"
 										value={form.type}
@@ -192,15 +193,14 @@ const AddGameModal = ({
 										placeholder={t(
 											"add.field.type.placeholder",
 										)}
-										className={inputClass}
+										className={INPUT_CLASS}
 									/>
-								</div>
+								</FormField>
 
 								<div className="grid grid-cols-2 gap-3">
-									<div>
-										<label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-											{t("add.field.min_players")}
-										</label>
+									<FormField
+										label={t("add.field.min_players")}
+									>
 										<input
 											type="number"
 											min="1"
@@ -211,13 +211,12 @@ const AddGameModal = ({
 													e.target.value,
 												)
 											}
-											className={inputClass}
+											className={INPUT_CLASS}
 										/>
-									</div>
-									<div>
-										<label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-											{t("add.field.max_players")}
-										</label>
+									</FormField>
+									<FormField
+										label={t("add.field.max_players")}
+									>
 										<input
 											type="number"
 											min="1"
@@ -228,16 +227,15 @@ const AddGameModal = ({
 													e.target.value,
 												)
 											}
-											className={inputClass}
+											className={INPUT_CLASS}
 										/>
-									</div>
+									</FormField>
 								</div>
 
 								<div className="grid grid-cols-2 gap-3">
-									<div>
-										<label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-											{t("add.field.min_playtime")}
-										</label>
+									<FormField
+										label={t("add.field.min_playtime")}
+									>
 										<input
 											type="number"
 											min="1"
@@ -248,13 +246,12 @@ const AddGameModal = ({
 													e.target.value,
 												)
 											}
-											className={inputClass}
+											className={INPUT_CLASS}
 										/>
-									</div>
-									<div>
-										<label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-											{t("add.field.max_playtime")}
-										</label>
+									</FormField>
+									<FormField
+										label={t("add.field.max_playtime")}
+									>
 										<input
 											type="number"
 											min="1"
@@ -265,15 +262,12 @@ const AddGameModal = ({
 													e.target.value,
 												)
 											}
-											className={inputClass}
+											className={INPUT_CLASS}
 										/>
-									</div>
+									</FormField>
 								</div>
 
-								<div>
-									<label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-										{t("add.field.year")}
-									</label>
+								<FormField label={t("add.field.year")}>
 									<input
 										type="number"
 										min="1800"
@@ -285,9 +279,9 @@ const AddGameModal = ({
 												e.target.value,
 											)
 										}
-										className={inputClass}
+										className={INPUT_CLASS}
 									/>
-								</div>
+								</FormField>
 
 								<CategoryInput
 									categories={form.categories}
@@ -295,13 +289,10 @@ const AddGameModal = ({
 									onChange={(cats) =>
 										updateField("categories", cats)
 									}
-									inputClass={inputClass}
+									inputClass={INPUT_CLASS}
 								/>
 
-								<div>
-									<label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-										{t("add.field.description")}
-									</label>
+								<FormField label={t("add.field.description")}>
 									<textarea
 										value={form.description}
 										onChange={(e) =>
@@ -314,22 +305,33 @@ const AddGameModal = ({
 											"add.field.description.placeholder",
 										)}
 										rows={3}
-										className={`${inputClass} resize-none`}
+										className={`${INPUT_CLASS} resize-none`}
 									/>
-								</div>
+								</FormField>
 							</>
 						)}
 
 						{error && (
-							<p className="text-red-500 text-sm">{error}</p>
+							<div className="flex items-center gap-2 px-3 py-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+								<p className="text-red-600 dark:text-red-400 text-sm">
+									{error}
+								</p>
+							</div>
 						)}
 
 						<button
 							type="submit"
 							disabled={loading}
-							className="w-full bg-blue-500 hover:bg-blue-600 disabled:opacity-50 text-white font-medium py-2 rounded-lg transition-colors duration-200"
+							className="w-full flex items-center justify-center gap-2 bg-blue-500 hover:bg-blue-600 active:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium py-2.5 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
 						>
-							{getSubmitLabel()}
+							{loading && (
+								<Loader2 className="w-4 h-4 animate-spin" />
+							)}
+							{loading
+								? isEdit
+									? t("edit.submitting")
+									: t("add.submitting")
+								: submitLabel}
 						</button>
 					</form>
 				</div>

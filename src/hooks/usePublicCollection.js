@@ -7,21 +7,39 @@ export const usePublicCollection = (userId) => {
 	const [error, setError] = useState(null);
 
 	useEffect(() => {
-		if (!userId) return;
+		if (!userId) {
+			setLoading(false);
+			return;
+		}
 
-		const fetch = async () => {
+		let mounted = true;
+
+		const fetchPublicCollection = async () => {
 			setLoading(true);
+			setError(null);
+
 			const { data, error } = await supabase
 				.from("games")
 				.select("*")
-				.eq("user_id", userId);
+				.eq("user_id", userId)
+				.order("name", { ascending: true });
 
-			if (error) setError("Failed to load collection.");
-			else setCollection(data);
+			if (!mounted) return;
+
+			if (error) {
+				setError("Failed to load collection.");
+			} else {
+				setCollection(data ?? []);
+			}
+
 			setLoading(false);
 		};
 
-		fetch();
+		fetchPublicCollection();
+
+		return () => {
+			mounted = false;
+		};
 	}, [userId]);
 
 	return { collection, loading, error };

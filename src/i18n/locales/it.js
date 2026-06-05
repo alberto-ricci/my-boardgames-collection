@@ -129,4 +129,25 @@ export default {
 	"toast.game_edited": "Modifiche salvate",
 	"toast.game_removed": "Gioco rimosso",
 	"toast.game_moved": "Gioco spostato nella collezione",
+
+	// BGG
+	"modal.bgg_link": "Visualizza su BoardGameGeek",
+
+	// Expansions
+	"expansions.title": "Espansioni",
+	"expansions.add": "Aggiungi",
+	"expansions.saving": "Salvataggio...",
+	"expansions.save": "Salva",
+	"expansions.cancel": "Annulla",
+	"expansions.empty": "Nessuna espansione aggiunta.",
+	"expansions.loading": "Caricamento...",
+	"expansions.owned": "Posseduta",
+	"expansions.wishlist": "Lista dei Desideri",
+	"expansions.name_placeholder": "Nome *",
+	"expansions.year_placeholder": "Anno",
+	"expansions.notes_placeholder": "Note (opzionale)",
+	"expansions.search_placeholder": "Cerca per compilare...",
+	"expansions.remove": "Rimuovi",
+	"expansions.expansion": "espansione",
+	"expansions.expansions": "espansioni",
 };

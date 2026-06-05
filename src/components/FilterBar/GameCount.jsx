@@ -6,26 +6,20 @@ const GameCount = ({ filtered, total }) => {
 	const isFiltered = filtered !== total;
 
 	return (
-		<span className="text-sm text-gray-500 dark:text-gray-400">
-			{isFiltered ? (
+		<span className="text-sm text-gray-500 dark:text-gray-400 tabular-nums">
+			<span className="font-medium text-gray-700 dark:text-gray-200">
+				{isFiltered ? filtered : total}
+			</span>
+			{isFiltered && (
 				<>
-					<span className="font-medium text-gray-700 dark:text-gray-200">
-						{filtered}
-					</span>{" "}
+					{" "}
 					{t("count.of")}{" "}
 					<span className="font-medium text-gray-700 dark:text-gray-200">
 						{total}
-					</span>{" "}
-					{t("count.games")}
+					</span>
 				</>
-			) : (
-				<>
-					<span className="font-medium text-gray-700 dark:text-gray-200">
-						{total}
-					</span>{" "}
-					{t("count.games")}
-				</>
-			)}
+			)}{" "}
+			{t("count.games")}
 		</span>
 	);
 };

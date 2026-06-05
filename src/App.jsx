@@ -1,5 +1,6 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { Routes, Route } from "react-router-dom";
+import { Loader2 } from "lucide-react";
 import Header from "./components/Header";
 import NavTabs from "./components/NavTabs";
 import FilterBar from "./components/FilterBar/FilterBar";
@@ -22,6 +23,23 @@ import { useAddGame } from "./hooks/useAddGame";
 import { useDarkMode } from "./hooks/useDarkMode";
 import { useToast } from "./hooks/useToast";
 import { useLanguage } from "./i18n";
+
+const LoadingScreen = ({ message }) => (
+	<div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+		<div className="flex items-center gap-3 text-gray-500 dark:text-gray-400">
+			<Loader2 className="w-5 h-5 animate-spin" />
+			<span className="text-sm">{message}</span>
+		</div>
+	</div>
+);
+
+const ErrorScreen = ({ message }) => (
+	<div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center px-4">
+		<div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl px-6 py-4 max-w-sm text-center">
+			<p className="text-red-600 dark:text-red-400 text-sm">{message}</p>
+		</div>
+	</div>
+);
 
 function CollectionApp() {
 	const { isDark, toggle: toggleDark } = useDarkMode();
@@ -60,37 +78,70 @@ function CollectionApp() {
 	const [editingGame, setEditingGame] = useState(null);
 	const [movingGame, setMovingGame] = useState(null);
 
-	// Scroll to top on tab change
 	useEffect(() => {
 		window.scrollTo({ top: 0, behavior: "smooth" });
 	}, [activeTab]);
 
-	const handleAddSuccess = (type, game, removedId) => {
-		if (type === "collection") {
-			addToCollectionState(game);
-			addToast(t("toast.game_added"));
-		} else if (type === "wishlist") {
-			addToWishlistState(game);
-			addToast(t("toast.wishlist_added"));
-		} else if (type === "edit") {
-			updateGame(game);
-			addToast(t("toast.game_edited"));
-		} else if (type === "move") {
-			addToCollectionState(game);
-			removeFromWishlistState(removedId);
-			addToast(t("toast.game_moved"));
-		}
-	};
+	const handleAddSuccess = useCallback(
+		(type, game, removedId) => {
+			const actions = {
+				collection: () => {
+					addToCollectionState(game);
+					addToast(t("toast.game_added"));
+				},
+				wishlist: () => {
+					addToWishlistState(game);
+					addToast(t("toast.wishlist_added"));
+				},
+				edit: () => {
+					updateGame(game);
+					addToast(t("toast.game_edited"));
+				},
+				move: () => {
+					addToCollectionState(game);
+					removeFromWishlistState(removedId);
+					addToast(t("toast.game_moved"));
+				},
+			};
+			actions[type]?.();
+		},
+		[
+			addToCollectionState,
+			addToWishlistState,
+			updateGame,
+			removeFromWishlistState,
+			addToast,
+			t,
+		],
+	);
 
-	const handleRemoveFromCollection = async (gameId) => {
-		await removeFromCollection(gameId);
-		addToast(t("toast.game_removed"));
-	};
+	const handleRemoveFromCollection = useCallback(
+		async (gameId) => {
+			await removeFromCollection(gameId);
+			addToast(t("toast.game_removed"));
+		},
+		[removeFromCollection, addToast, t],
+	);
 
-	const handleRemoveFromWishlist = async (gameId) => {
-		await removeFromWishlist(gameId);
-		addToast(t("toast.game_removed"));
-	};
+	const handleRemoveFromWishlist = useCallback(
+		async (gameId) => {
+			await removeFromWishlist(gameId);
+			addToast(t("toast.game_removed"));
+		},
+		[removeFromWishlist, addToast, t],
+	);
+
+	const handleSelectGame = useCallback((game) => setSelectedGame(game), []);
+	const handleCloseGame = useCallback(() => setSelectedGame(null), []);
+	const handleEditGame = useCallback((game) => {
+		setSelectedGame(null);
+		setEditingGame(game);
+	}, []);
+	const handleOpenAdd = useCallback(() => setAddModalOpen(true), []);
+	const handleCloseAdd = useCallback(() => setAddModalOpen(false), []);
+	const handleCloseEdit = useCallback(() => setEditingGame(null), []);
+	const handleCloseMove = useCallback(() => setMovingGame(null), []);
+	const handleMove = useCallback((game) => setMovingGame(game), []);
 
 	const {
 		addToCollection,
@@ -99,21 +150,20 @@ function CollectionApp() {
 		moveToCollection,
 	} = useAddGame(userId, handleAddSuccess);
 
-	const existingCategories = [
-		...new Set(collection.flatMap((g) => g.categories ?? [])),
-	].sort();
+	const existingCategories = useMemo(
+		() =>
+			[...new Set(collection.flatMap((g) => g.categories ?? []))].sort(),
+		[collection],
+	);
 
-	if (sessionLoading || profileLoading) {
-		return (
-			<div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-				<p className="text-gray-500 text-sm">{t("loading.generic")}</p>
-			</div>
-		);
-	}
+	const addModalMode = activeTab === "stats" ? "collection" : activeTab;
+	const addModalSubmit =
+		activeTab === "wishlist" ? addToWishlist : addToCollection;
 
+	if (sessionLoading || profileLoading)
+		return <LoadingScreen message={t("loading.generic")} />;
 	if (!session) return <LoginPage />;
-
-	if (!profile) {
+	if (!profile)
 		return (
 			<ProfilePage
 				userId={userId}
@@ -122,27 +172,10 @@ function CollectionApp() {
 				isSetup
 			/>
 		);
-	}
-
-	if (collectionLoading || wishlistLoading) {
-		return (
-			<div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-				<p className="text-gray-500 text-sm">
-					{t("loading.collection")}
-				</p>
-			</div>
-		);
-	}
-
-	if (collectionError || wishlistError) {
-		return (
-			<div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-				<p className="text-red-500 text-sm">
-					{collectionError || wishlistError}
-				</p>
-			</div>
-		);
-	}
+	if (collectionLoading || wishlistLoading)
+		return <LoadingScreen message={t("loading.collection")} />;
+	if (collectionError || wishlistError)
+		return <ErrorScreen message={collectionError || wishlistError} />;
 
 	return (
 		<div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
@@ -169,7 +202,7 @@ function CollectionApp() {
 							<BoardGameGrid
 								games={filteredGames}
 								onRemove={handleRemoveFromCollection}
-								onSelect={setSelectedGame}
+								onSelect={handleSelectGame}
 							/>
 						</div>
 					</>
@@ -178,24 +211,20 @@ function CollectionApp() {
 					<WishlistGrid
 						games={wishlist}
 						onRemove={handleRemoveFromWishlist}
-						onMove={(game) => setMovingGame(game)}
+						onMove={handleMove}
 					/>
 				)}
 				{activeTab === "stats" && <StatsTab collection={collection} />}
 			</main>
 
-			<AddGameButton onClick={() => setAddModalOpen(true)} />
+			<AddGameButton onClick={handleOpenAdd} />
 			<ScrollToTop />
 
 			{addModalOpen && (
 				<AddGameModal
-					mode={activeTab === "stats" ? "collection" : activeTab}
-					onClose={() => setAddModalOpen(false)}
-					onSubmit={
-						activeTab === "wishlist"
-							? addToWishlist
-							: addToCollection
-					}
+					mode={addModalMode}
+					onClose={handleCloseAdd}
+					onSubmit={addModalSubmit}
 					existingCategories={existingCategories}
 				/>
 			)}
@@ -204,7 +233,7 @@ function CollectionApp() {
 				<AddGameModal
 					mode="edit"
 					game={editingGame}
-					onClose={() => setEditingGame(null)}
+					onClose={handleCloseEdit}
 					onSubmit={(form) => submitEdit(editingGame.id, form)}
 					existingCategories={existingCategories}
 				/>
@@ -214,7 +243,7 @@ function CollectionApp() {
 				<AddGameModal
 					mode="move"
 					game={movingGame}
-					onClose={() => setMovingGame(null)}
+					onClose={handleCloseMove}
 					onSubmit={(form) => moveToCollection(movingGame, form)}
 					existingCategories={existingCategories}
 				/>
@@ -222,11 +251,8 @@ function CollectionApp() {
 
 			<GameModal
 				game={selectedGame}
-				onClose={() => setSelectedGame(null)}
-				onEdit={(game) => {
-					setSelectedGame(null);
-					setEditingGame(game);
-				}}
+				onClose={handleCloseGame}
+				onEdit={handleEditGame}
 				userId={userId}
 			/>
 

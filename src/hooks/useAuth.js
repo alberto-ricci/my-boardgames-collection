@@ -6,9 +6,11 @@ export const useAuth = () => {
 	const [loading, setLoading] = useState(true);
 
 	useEffect(() => {
-		console.log("useAuth running");
-		supabase.auth.getSession().then(({ data: { session } }) => {
-			console.log("session resolved", session);
+		let mounted = true;
+
+		supabase.auth.getSession().then(({ data: { session }, error }) => {
+			if (!mounted) return;
+			if (error) console.error("Auth session error:", error.message);
 			setSession(session);
 			setLoading(false);
 		});
@@ -16,10 +18,14 @@ export const useAuth = () => {
 		const {
 			data: { subscription },
 		} = supabase.auth.onAuthStateChange((_event, session) => {
+			if (!mounted) return;
 			setSession(session);
 		});
 
-		return () => subscription.unsubscribe();
+		return () => {
+			mounted = false;
+			subscription.unsubscribe();
+		};
 	}, []);
 
 	return { session, loading };
