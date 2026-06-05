@@ -227,6 +227,7 @@ function CollectionApp() {
 					setSelectedGame(null);
 					setEditingGame(game);
 				}}
+				userId={userId}
 			/>
 
 			<ToastContainer

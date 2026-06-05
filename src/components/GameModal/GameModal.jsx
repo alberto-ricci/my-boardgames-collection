@@ -3,9 +3,16 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, Users, Clock, Calendar, Layers, Pencil } from "lucide-react";
 import GameImage from "../BoardGameCard/GameImage";
 import { useLanguage } from "../../i18n";
-
-const GameModal = ({ game, onClose, onEdit }) => {
+import ExpansionsSection from "../AddGameModal/ExpansionsSection";
+import { useExpansions } from "../../hooks/useExpansions";
+const GameModal = ({ game, onClose, onEdit, userId }) => {
 	const { t } = useLanguage();
+	const {
+		expansions,
+		loading: expansionsLoading,
+		addExpansion,
+		removeExpansion,
+	} = useExpansions(game?.id, userId);
 
 	React.useEffect(() => {
 		const handleKeyDown = (e) => {
@@ -48,7 +55,7 @@ const GameModal = ({ game, onClose, onEdit }) => {
 						transition={{ duration: 0.2, ease: "easeOut" }}
 					>
 						<div
-							className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg w-full max-w-lg overflow-hidden"
+							className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg w-full max-w-lg max-h-[90vh] overflow-y-auto"
 							onClick={(e) => e.stopPropagation()}
 						>
 							{/* Image + buttons */}
@@ -135,6 +142,15 @@ const GameModal = ({ game, onClose, onEdit }) => {
 										))}
 									</div>
 								)}
+
+								<ExpansionsSection
+									gameId={game?.id}
+									userId={userId}
+									expansions={expansions}
+									loading={expansionsLoading}
+									onAdd={addExpansion}
+									onRemove={removeExpansion}
+								/>
 							</div>
 						</div>
 					</motion.div>
