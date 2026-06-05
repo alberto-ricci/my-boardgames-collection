@@ -114,4 +114,19 @@ export default {
 	"edit.submit": "Salva Modifiche",
 	"edit.submitting": "Salvataggio...",
 	"wishlist.move": "Aggiungi alla Collezione",
+
+	// Stats
+	"nav.stats": "Statistiche",
+	"stats.total": "Giochi Totali",
+	"stats.solo": "Giocabile in Solitario",
+	"stats.avg_playtime": "Durata Media",
+	"stats.avg_playtime_unit": "min",
+	"stats.oldest": "Gioco più Vecchio",
+	"stats.newest": "Gioco più Recente",
+	"stats.top_categories": "Categorie Principali",
+	"toast.game_added": "Gioco aggiunto alla collezione",
+	"toast.wishlist_added": "Gioco aggiunto alla lista dei desideri",
+	"toast.game_edited": "Modifiche salvate",
+	"toast.game_removed": "Gioco rimosso",
+	"toast.game_moved": "Gioco spostato nella collezione",
 };

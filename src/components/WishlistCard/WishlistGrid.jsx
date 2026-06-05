@@ -2,11 +2,23 @@ import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
 import WishlistCard from "../WishlistCard/WishlistCard";
-import { useLanguage } from "../../i18n/index.jsx";
+import ConfirmModal from "../ConfirmModal/ConfirmModal";
+import { useLanguage } from "../../i18n";
 
 const WishlistGrid = ({ games = [], onRemove, onMove }) => {
 	const { t } = useLanguage();
 	const validGames = games.filter((game) => game?.id && game?.name);
+	const [pendingRemove, setPendingRemove] = React.useState(null);
+
+	const handleRemoveClick = (e, game) => {
+		e.stopPropagation();
+		setPendingRemove(game);
+	};
+
+	const handleConfirm = () => {
+		onRemove(pendingRemove.id);
+		setPendingRemove(null);
+	};
 
 	if (validGames.length === 0) {
 		return (
@@ -21,38 +33,43 @@ const WishlistGrid = ({ games = [], onRemove, onMove }) => {
 	}
 
 	return (
-		<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-			<AnimatePresence mode="popLayout">
-				{validGames.map((game) => (
-					<motion.div
-						key={game.id}
-						layout
-						initial={{ opacity: 0, scale: 0.97 }}
-						animate={{ opacity: 1, scale: 1 }}
-						exit={{ opacity: 0, scale: 0.95 }}
-						transition={{ duration: 0.2, ease: "easeOut" }}
-						className="relative"
-					>
-						<WishlistCard
-							game={game}
-							onMove={onMove}
-						/>
-						{onRemove && (
-							<button
-								onClick={(e) => {
-									e.stopPropagation();
-									onRemove(game.id);
-								}}
-								className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white rounded-md p-1.5 transition-colors duration-200"
-								aria-label={`Remove ${game.name} from wishlist`}
-							>
-								<X className="w-3.5 h-3.5" />
-							</button>
-						)}
-					</motion.div>
-				))}
-			</AnimatePresence>
-		</div>
+		<>
+			<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+				<AnimatePresence mode="popLayout">
+					{validGames.map((game) => (
+						<motion.div
+							key={game.id}
+							layout
+							initial={{ opacity: 0, scale: 0.97 }}
+							animate={{ opacity: 1, scale: 1 }}
+							exit={{ opacity: 0, scale: 0.95 }}
+							transition={{ duration: 0.2, ease: "easeOut" }}
+							className="relative"
+						>
+							<WishlistCard
+								game={game}
+								onMove={onMove}
+							/>
+							{onRemove && (
+								<button
+									onClick={(e) => handleRemoveClick(e, game)}
+									className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white rounded-md p-1.5 transition-colors duration-200"
+									aria-label={`Remove ${game.name} from wishlist`}
+								>
+									<X className="w-3.5 h-3.5" />
+								</button>
+							)}
+						</motion.div>
+					))}
+				</AnimatePresence>
+			</div>
+
+			<ConfirmModal
+				game={pendingRemove}
+				onConfirm={handleConfirm}
+				onCancel={() => setPendingRemove(null)}
+			/>
+		</>
 	);
 };
 

@@ -4,6 +4,7 @@ import { useLanguage } from "../i18n";
 const TABS = [
 	{ id: "collection", labelKey: "nav.collection" },
 	{ id: "wishlist", labelKey: "nav.wishlist" },
+	{ id: "stats", labelKey: "nav.stats" },
 ];
 
 const NavTabs = ({ activeTab, setActiveTab }) => {

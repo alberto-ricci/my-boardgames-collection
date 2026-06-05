@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Routes, Route } from "react-router-dom";
 import Header from "./components/Header";
 import NavTabs from "./components/NavTabs";
@@ -11,17 +11,24 @@ import AddGameButton from "./components/AddGameModal/AddGameButton";
 import LoginPage from "./components/LoginPage/LoginPage";
 import SharedView from "./components/SharedView/SharedView";
 import ProfilePage from "./components/ProfilePage/ProfilePage";
+import StatsTab from "./components/StatsTab/StatsTab";
+import ToastContainer from "./components/Toast/ToastContainer";
+import ScrollToTop from "./components/ScrollToTop/ScrollToTop";
 import { useAuth } from "./hooks/useAuth";
 import { useCollection } from "./hooks/useCollection";
 import { useWishlist } from "./hooks/useWishlist";
 import { useProfile } from "./hooks/useProfile";
 import { useAddGame } from "./hooks/useAddGame";
 import { useDarkMode } from "./hooks/useDarkMode";
+import { useToast } from "./hooks/useToast";
+import { useLanguage } from "./i18n";
 
 function CollectionApp() {
 	const { isDark, toggle: toggleDark } = useDarkMode();
 	const { session, loading: sessionLoading } = useAuth();
+	const { t } = useLanguage();
 	const userId = session?.user?.id;
+	const { toasts, addToast, removeToast } = useToast();
 
 	const {
 		profile,
@@ -53,14 +60,36 @@ function CollectionApp() {
 	const [editingGame, setEditingGame] = useState(null);
 	const [movingGame, setMovingGame] = useState(null);
 
+	// Scroll to top on tab change
+	useEffect(() => {
+		window.scrollTo({ top: 0, behavior: "smooth" });
+	}, [activeTab]);
+
 	const handleAddSuccess = (type, game, removedId) => {
-		if (type === "collection") addToCollectionState(game);
-		else if (type === "wishlist") addToWishlistState(game);
-		else if (type === "edit") updateGame(game);
-		else if (type === "move") {
+		if (type === "collection") {
+			addToCollectionState(game);
+			addToast(t("toast.game_added"));
+		} else if (type === "wishlist") {
+			addToWishlistState(game);
+			addToast(t("toast.wishlist_added"));
+		} else if (type === "edit") {
+			updateGame(game);
+			addToast(t("toast.game_edited"));
+		} else if (type === "move") {
 			addToCollectionState(game);
 			removeFromWishlistState(removedId);
+			addToast(t("toast.game_moved"));
 		}
+	};
+
+	const handleRemoveFromCollection = async (gameId) => {
+		await removeFromCollection(gameId);
+		addToast(t("toast.game_removed"));
+	};
+
+	const handleRemoveFromWishlist = async (gameId) => {
+		await removeFromWishlist(gameId);
+		addToast(t("toast.game_removed"));
 	};
 
 	const {
@@ -77,7 +106,7 @@ function CollectionApp() {
 	if (sessionLoading || profileLoading) {
 		return (
 			<div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-				<p className="text-gray-500 text-sm">Loading...</p>
+				<p className="text-gray-500 text-sm">{t("loading.generic")}</p>
 			</div>
 		);
 	}
@@ -99,7 +128,7 @@ function CollectionApp() {
 		return (
 			<div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
 				<p className="text-gray-500 text-sm">
-					Loading your collection...
+					{t("loading.collection")}
 				</p>
 			</div>
 		);
@@ -130,7 +159,7 @@ function CollectionApp() {
 			/>
 
 			<main className="flex-grow max-w-6xl mx-auto w-full p-6">
-				{activeTab === "collection" ? (
+				{activeTab === "collection" && (
 					<>
 						<FilterBar
 							games={collection}
@@ -139,37 +168,38 @@ function CollectionApp() {
 						<div className="mt-6">
 							<BoardGameGrid
 								games={filteredGames}
-								onRemove={removeFromCollection}
+								onRemove={handleRemoveFromCollection}
 								onSelect={setSelectedGame}
 							/>
 						</div>
 					</>
-				) : (
+				)}
+				{activeTab === "wishlist" && (
 					<WishlistGrid
 						games={wishlist}
-						onRemove={removeFromWishlist}
+						onRemove={handleRemoveFromWishlist}
 						onMove={(game) => setMovingGame(game)}
 					/>
 				)}
+				{activeTab === "stats" && <StatsTab collection={collection} />}
 			</main>
 
 			<AddGameButton onClick={() => setAddModalOpen(true)} />
+			<ScrollToTop />
 
-			{/* Add modal */}
 			{addModalOpen && (
 				<AddGameModal
-					mode={activeTab}
+					mode={activeTab === "stats" ? "collection" : activeTab}
 					onClose={() => setAddModalOpen(false)}
 					onSubmit={
-						activeTab === "collection"
-							? addToCollection
-							: addToWishlist
+						activeTab === "wishlist"
+							? addToWishlist
+							: addToCollection
 					}
 					existingCategories={existingCategories}
 				/>
 			)}
 
-			{/* Edit modal */}
 			{editingGame && (
 				<AddGameModal
 					mode="edit"
@@ -180,7 +210,6 @@ function CollectionApp() {
 				/>
 			)}
 
-			{/* Move to collection modal */}
 			{movingGame && (
 				<AddGameModal
 					mode="move"
@@ -198,6 +227,11 @@ function CollectionApp() {
 					setSelectedGame(null);
 					setEditingGame(game);
 				}}
+			/>
+
+			<ToastContainer
+				toasts={toasts}
+				onRemove={removeToast}
 			/>
 		</div>
 	);

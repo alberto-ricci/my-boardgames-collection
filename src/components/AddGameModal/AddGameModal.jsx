@@ -63,17 +63,21 @@ const AddGameModal = ({
 	};
 
 	const handleBggSelect = (bggGame) => {
-		setForm({
-			name: bggGame.name ?? "",
-			type: "Board Game",
-			min_players: bggGame.min_players?.toString() ?? "",
-			max_players: bggGame.max_players?.toString() ?? "",
-			min_playtime: bggGame.min_playtime?.toString() ?? "",
-			max_playtime: bggGame.max_playtime?.toString() ?? "",
-			year_published: bggGame.year_published?.toString() ?? "",
-			description: bggGame.description ?? "",
-			categories: bggGame.categories ?? [],
-		});
+		if (mode === "wishlist") {
+			setForm({ ...EMPTY_FORM, name: bggGame.name ?? "" });
+		} else {
+			setForm({
+				name: bggGame.name ?? "",
+				type: "Board Game",
+				min_players: bggGame.min_players?.toString() ?? "",
+				max_players: bggGame.max_players?.toString() ?? "",
+				min_playtime: bggGame.min_playtime?.toString() ?? "",
+				max_playtime: bggGame.max_playtime?.toString() ?? "",
+				year_published: bggGame.year_published?.toString() ?? "",
+				description: bggGame.description ?? "",
+				categories: bggGame.categories ?? [],
+			});
+		}
 	};
 
 	const handleSubmit = async (e) => {

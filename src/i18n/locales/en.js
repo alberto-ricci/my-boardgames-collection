@@ -114,4 +114,19 @@ export default {
 	"edit.submit": "Save Changes",
 	"edit.submitting": "Saving...",
 	"wishlist.move": "Add to Collection",
+
+	// Stats
+	"nav.stats": "Stats",
+	"stats.total": "Total Games",
+	"stats.solo": "Solo Friendly",
+	"stats.avg_playtime": "Avg. Playtime",
+	"stats.avg_playtime_unit": "min",
+	"stats.oldest": "Oldest Game",
+	"stats.newest": "Newest Game",
+	"stats.top_categories": "Top Categories",
+	"toast.game_added": "Game added to collection",
+	"toast.wishlist_added": "Game added to wishlist",
+	"toast.game_edited": "Changes saved",
+	"toast.game_removed": "Game removed",
+	"toast.game_moved": "Game moved to collection",
 };
